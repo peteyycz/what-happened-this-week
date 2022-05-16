@@ -1,0 +1,1 @@
+[![Run in Livebook](https://livebook.dev/badge/v1/pink.svg)](https://livebook.dev/run?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpeteyycz%2Fwhat-happened-this-week%2Fmain%2Fwhat_happened_this_week.livemd)
