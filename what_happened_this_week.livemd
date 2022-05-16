@@ -1,0 +1,77 @@
+# What happened this week
+
+```elixir
+Mix.install([
+  :slack,
+  :kino
+])
+```
+
+## Program
+
+```elixir
+slack_access_token = ''
+```
+
+```elixir
+defmodule KinoDocs.HTML do
+  use Kino.JS
+
+  def new(html) do
+    Kino.JS.new(__MODULE__, html)
+  end
+
+  asset "main.js" do
+    """
+    export function init(ctx, html) {
+      ctx.root.innerHTML = html;
+    }
+    """
+  end
+end
+```
+
+```elixir
+[podcast_channel = %{id: channel_id}] =
+  Slack.Web.Conversations.list(%{token: slack_access_token})
+  |> Map.get("channels")
+  |> Enum.map(fn channel -> %{name: channel["name"], id: channel["id"]} end)
+  |> Enum.filter(fn channel -> Regex.match?(~r/development/, channel.name) end)
+
+channel_id
+```
+
+```elixir
+podcast_hashtag_regex = ~r/<#C144UA49G|podcast>/
+
+defmodule SlackHelper do
+  def render_attachment(message) do
+    case message["attachments"] do
+      [first] ->
+        "<a href=\"#{first["original_url"]}\">#{first["original_url"]}</a>"
+
+      _ ->
+        ""
+    end
+  end
+
+  def trim_hashtag(message) do
+    removed = Regex.replace(~r/<#C144UA49G|podcast>/, message, "")
+    Regex.replace(~r/(<|>| \|)/, removed, "")
+  end
+end
+
+Slack.Web.Conversations.history(channel_id, %{token: slack_access_token})
+|> Map.get("messages")
+|> Enum.filter(fn message -> Regex.match?(podcast_hashtag_regex, message["text"]) end)
+|> Enum.map(fn message ->
+  """
+    <li>
+      <span>#{SlackHelper.trim_hashtag(message["text"])}</span>
+      #{SlackHelper.render_attachment(message)}
+    </li>
+  """
+end)
+|> Enum.join("")
+|> KinoDocs.HTML.new()
+```
